@@ -119,7 +119,35 @@ async function run() {
             res.send(result);
         })
 
-       
+        //ACCEPTED jobs APIs ----------------------
+        //create api
+        app.post('/acceptjob', async (req, res) => {
+            const newacceptedJob = req.body;
+            const result = await acceptedJobsCollection.insertOne(newacceptedJob);
+            res.send(result);
+        })
+
+        //read api for accepted jobs by email
+        app.get('/acceptedjobs', async (req, res) => {
+            const email = req.query.email;
+            const query = {accepted_by: email};
+
+            if (!email) {
+                res.send('email not specified!')
+            }
+            const cursor = acceptedJobsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        //delete accepted jobs api
+        app.delete('/deleteacceptedjob/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            // const query = { _id: id };
+            const result = await acceptedJobsCollection.deleteOne(query);
+            res.send(result);
+        })
 
 
         // Send a ping to confirm a successful connection
