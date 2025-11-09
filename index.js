@@ -1,0 +1,103 @@
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config()
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const app = express();
+const port = process.env.PORT || 3000;
+
+//middleware
+app.use(cors());
+app.use(express.json());
+
+
+//connection uri
+// const uri = "mongodb+srv://smart-deals-user:XODwqIlipY3g1azM@ta.qolps9k.mongodb.net/?appName=TA";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@ta.qolps9k.mongodb.net/?appName=TA`;
+
+//client
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
+});
+
+async function run() {
+    try {
+        //connecting  the client to the server
+        await client.connect();
+
+        //getting the database
+        const db = client.db('tech_desk_db');
+
+        //getting the table/collection
+        const jobsCollection = db.collection('jobs');
+        const acceptedJobsCollection = db.collection('acceptedJobs');
+        const usersCollection = db.collection('users');
+
+        //users APIs
+            //create api
+        app.post('/users', async (req, res) => {
+            const newUser = req.body;
+            const email = newUser.email;                                    //taking email from req.body for query
+
+            const query = { email: email };                                 //query to check user 
+            const existingUser = await userCollection.findOne(query);       //finding wheather the user already exists in the db or not
+
+            if (existingUser) {
+                res.send({ message: 'User already exists, no need to insert into db' });              //not inserting if user exists
+            } else {
+                const result = await userCollection.insertOne(newUser);                             //inserting user into db if user already doesn't exist
+                res.send(result);
+            }
+        })
+
+
+        //jobs APIs with data from database---------
+            //create api
+        app.post('/jobs', async(req, res) => {
+            const newJob = req.body;
+            const result = await jobsCollection.insertOne(newJob);
+            req.send(result);
+        })
+
+            //read api all jobs or jobs by email
+        app.get('/jobs', async(req, res) => {
+            const email = req.query.email;
+            const query = {};
+            if(email){
+                query.email = email;
+            }
+            const cursor = jobsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+            //latest posted jobs
+        app.get('/latest-jobs', async (req, res) => {
+            const cursor = jobsCollection.find().sort({created_at: -1}).limit(6);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+
+        // Send a ping to confirm a successful connection
+        await client.db("admin").command({ ping: 1 });
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } finally {
+        // Ensures that the client will close when you finish/error
+        // await client.close();
+    }
+}
+run().catch(console.dir);
+
+//APIs
+app.get('/', (req, res) => {
+    res.send('Tech Desk server is up and runnig')
+})
+
+app.listen(port, () => {
+    console.log(`Tech Desk server is running on port: ${port}`)
+})
