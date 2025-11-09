@@ -121,14 +121,14 @@ async function run() {
 
         //ACCEPTED jobs APIs ----------------------
         //create api
-        app.post('/acceptjob', async (req, res) => {
+        app.post('/accept-task', async (req, res) => {
             const newacceptedJob = req.body;
             const result = await acceptedJobsCollection.insertOne(newacceptedJob);
             res.send(result);
         })
 
         //read api for accepted jobs by email
-        app.get('/acceptedjobs', async (req, res) => {
+        app.get('/my-accepted-tasks', async (req, res) => {
             const email = req.query.email;
             const query = {accepted_by: email};
 
@@ -141,7 +141,7 @@ async function run() {
         })
 
         //delete accepted jobs api
-        app.delete('/deleteacceptedjob/:id', async (req, res) => {
+        app.delete('/delete-accepted-task/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             // const query = { _id: id };
