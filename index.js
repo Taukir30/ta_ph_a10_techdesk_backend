@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -11,7 +11,6 @@ app.use(express.json());
 
 
 //connection uri
-// const uri = "mongodb+srv://smart-deals-user:XODwqIlipY3g1azM@ta.qolps9k.mongodb.net/?appName=TA";
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@ta.qolps9k.mongodb.net/?appName=TA`;
 
 //client
@@ -38,7 +37,7 @@ async function run() {
         const usersCollection = db.collection('users');
 
         //users APIs
-            //create api
+        //create api
         app.post('/users', async (req, res) => {
             const newUser = req.body;
             const email = newUser.email;                                    //taking email from req.body for query
@@ -56,36 +55,77 @@ async function run() {
 
 
         //jobs APIs with data from database---------
-            //create api
-        app.post('/jobs', async(req, res) => {
+        //create api
+        app.post('/addjob', async (req, res) => {
             const newJob = req.body;
             const result = await jobsCollection.insertOne(newJob);
-            req.send(result);
+            res.send(result);
         })
 
-            //read api all jobs or jobs by email
-        app.get('/jobs', async(req, res) => {
+        //read api all jobs or jobs by email
+        app.get('/alljobs', async (req, res) => {
             const email = req.query.email;
             const query = {};
-            if(email){
-                query.email = email;
+            if (email) {
+                query.userEmail = email;
             }
             const cursor = jobsCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
 
-            //latest posted jobs
+        //latest posted jobs
         app.get('/latest-jobs', async (req, res) => {
-            const cursor = jobsCollection.find().sort({created_at: -1}).limit(6);
+            const cursor = jobsCollection.find().sort({ created_at: -1 }).limit(6);
             const result = await cursor.toArray();
             res.send(result);
         })
+
+        //job details read api
+        app.get('/alljobs/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            // const query = { _id: id };
+            const result = await jobsCollection.findOne(query);
+            res.send(result);
+        })
+
+        //update api
+        app.patch('/updatejob/:id', async (req, res) => {
+            const id = req.params.id;                           //getting job id from route
+            const query = { _id: new ObjectId(id) };            //making query which job will be updated
+            // const query = { _id: id };                           //making query which job will be updated
+            const updatedJob = req.body;                    //getting latest data from frontend
+            const update = {                                    //making data $set object to pass in function
+                // $set: updatedJob;
+                $set: {
+                    title: updatedJob.title,
+                    category: updatedJob.category,
+                    summary: updatedJob.summary,
+                    coverImage: updatedJob.coverImage
+                }
+            }
+
+            const result = await jobsCollection.updateOne(query, update);         //updating command
+            res.send(result);                                                           //sending response
+        })
+
+        //delete api
+        app.delete('/deletejob/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            // const query = { _id: id };
+            const result = await jobsCollection.deleteOne(query);
+            res.send(result);
+        })
+
+       
 
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
