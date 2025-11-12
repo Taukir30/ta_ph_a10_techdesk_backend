@@ -36,7 +36,22 @@ async function run() {
         const acceptedJobsCollection = db.collection('acceptedJobs');
         const usersCollection = db.collection('users');
 
-        
+        //users APIs
+        //create api
+        app.post('/users', async (req, res) => {
+            const newUser = req.body;
+            const email = newUser.email;                                    //taking email from req.body for query
+
+            const query = { email: email };                                 //query to check user 
+            const existingUser = await userCollection.findOne(query);       //finding wheather the user already exists in the db or not
+
+            if (existingUser) {
+                res.send({ message: 'User already exists, no need to insert into db' });              //not inserting if user exists
+            } else {
+                const result = await userCollection.insertOne(newUser);                             //inserting user into db if user already doesn't exist
+                res.send(result);
+            }
+        })
 
 
         //jobs APIs with data from database---------
