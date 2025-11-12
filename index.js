@@ -84,6 +84,11 @@ async function run() {
         //job details read api
         app.get('/alljobs/:id', async (req, res) => {
             const id = req.params.id;
+
+            if(!/^[a-fA-F0-9]{24}$/.test(id)){
+                res.send({})
+            }
+
             const query = { _id: new ObjectId(id) };
             // const query = { _id: id };
             const result = await jobsCollection.findOne(query);
