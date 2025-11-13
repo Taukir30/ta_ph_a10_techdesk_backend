@@ -69,7 +69,7 @@ async function run() {
             if (email) {
                 query.userEmail = email;
             }
-            const cursor = jobsCollection.find(query);
+            const cursor = jobsCollection.find(query).sort({ created_at: -1 });
             const result = await cursor.toArray();
             res.send(result);
         })
