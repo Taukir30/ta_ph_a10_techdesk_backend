@@ -64,19 +64,27 @@ async function run() {
 
         //read api all jobs or jobs by email
         app.get('/alljobs', async (req, res) => {
-            const { email, status, limit = 0, skip = 0, sort = "created_at", order = "desc" } = req.query;
+            const { searchText, category, email, status, limit = 0, skip = 0, sort = "created_at", order = "desc" } = req.query;
             const query = {};
 
             const sortOption = {};
             sortOption[sort || "created_at"] = order === "asc" ? 1 : -1;
 
-            // console.log(sortOption)
+            // console.log(category)
             if (email) {
                 query.userEmail = email;
             }
 
             if (status) {
                 query.status = status;
+            }
+
+            if (category) {
+                query.category = category;
+            }
+
+            if (searchText) {
+                query.title = {$regex: searchText, $options: 'i'}
             }
 
             const cursor = jobsCollection.find(query).sort(sortOption).limit(Number(limit)).skip(Number(skip));
