@@ -79,9 +79,11 @@ async function run() {
                 query.status = status;
             }
 
-            const cursor = jobsCollection.find(query).sort(sortOption);
+            const cursor = jobsCollection.find(query).sort(sortOption).limit(Number(limit)).skip(Number(skip));
             const result = await cursor.toArray();
-            res.send(result);
+
+            const count = await jobsCollection.countDocuments();
+            res.send({ result, total: count });
         })
 
         //latest posted jobs
