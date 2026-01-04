@@ -26,7 +26,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         //connecting  the client to the server
-        // await client.connect();
+        await client.connect();
 
         //getting the database
         const db = client.db('tech_desk_db');
@@ -43,12 +43,12 @@ async function run() {
             const email = newUser.email;                                    //taking email from req.body for query
 
             const query = { email: email };                                 //query to check user 
-            const existingUser = await userCollection.findOne(query);       //finding wheather the user already exists in the db or not
+            const existingUser = await usersCollection.findOne(query);       //finding wheather the user already exists in the db or not
 
             if (existingUser) {
                 res.send({ message: 'User already exists, no need to insert into db' });              //not inserting if user exists
             } else {
-                const result = await userCollection.insertOne(newUser);                             //inserting user into db if user already doesn't exist
+                const result = await usersCollection.insertOne(newUser);                             //inserting user into db if user already doesn't exist
                 res.send(result);
             }
         })
@@ -64,12 +64,22 @@ async function run() {
 
         //read api all jobs or jobs by email
         app.get('/alljobs', async (req, res) => {
-            const email = req.query.email;
+            const { email, status, limit = 0, skip = 0, sort = "created_at", order = "desc" } = req.query;
             const query = {};
+
+            const sortOption = {};
+            sortOption[sort || "created_at"] = order === "asc" ? 1 : -1;
+
+            // console.log(sortOption)
             if (email) {
                 query.userEmail = email;
             }
-            const cursor = jobsCollection.find(query).sort({ created_at: -1 });
+
+            if (status) {
+                query.status = status;
+            }
+
+            const cursor = jobsCollection.find(query).sort(sortOption);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -85,7 +95,7 @@ async function run() {
         app.get('/alljobs/:id', async (req, res) => {
             const id = req.params.id;
 
-            if(!/^[a-fA-F0-9]{24}$/.test(id)){
+            if (!/^[a-fA-F0-9]{24}$/.test(id)) {
                 res.send({})
             }
 
@@ -135,7 +145,7 @@ async function run() {
         //read api for accepted jobs by email
         app.get('/my-accepted-tasks', async (req, res) => {
             const email = req.query.email;
-            const query = {accepted_by: email};
+            const query = { accepted_by: email };
 
             if (!email) {
                 res.send('email not specified!')
@@ -156,7 +166,7 @@ async function run() {
 
 
         // Send a ping to confirm a successful connection
-        // await client.db("admin").command({ ping: 1 });
+        await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     } finally {
